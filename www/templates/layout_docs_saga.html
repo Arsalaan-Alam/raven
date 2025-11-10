@@ -59,6 +59,25 @@
       </main>
     </div>
   </div>
+
+  <script>
+    (function () {
+      var target = document.getElementById('saga-api-nav');
+      if (!target) return;
+      fetch('/docs/saga/api_nav.html')
+        .then(function (response) {
+          if (!response.ok) return '';
+          return response.text();
+        })
+        .then(function (html) {
+          if (!html) return;
+          target.innerHTML = html;
+        })
+        .catch(function () {
+          /* ignore errors when loading the API navigation */
+        });
+    })();
+  </script>
 </body>
 
 </html>

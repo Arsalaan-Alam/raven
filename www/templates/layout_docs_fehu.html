@@ -45,8 +45,7 @@
 
       <div class="nav-section">
         <div class="nav-title">API Reference</div>
-        <ul class="nav-links">
-        </ul>
+        <ul class="nav-links" id="fehu-api-nav"></ul>
       </div>
     </nav>
 
@@ -58,6 +57,25 @@
       </main>
     </div>
   </div>
+
+  <script>
+    (function () {
+      var target = document.getElementById('fehu-api-nav');
+      if (!target) return;
+      fetch('/docs/fehu/api_nav.html')
+        .then(function (response) {
+          if (!response.ok) return '';
+          return response.text();
+        })
+        .then(function (html) {
+          if (!html) return;
+          target.innerHTML = html;
+        })
+        .catch(function () {
+          /* ignore errors when loading the API navigation */
+        });
+    })();
+  </script>
 </body>
 
 </html>

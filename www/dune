@@ -11,6 +11,115 @@
 ;     (copy ../odoc/odoc_search.js odoc_search.js)
 ;     (copy ../odoc/sherlodoc.js sherlodoc.js)))))
 
+; Generate API documentation pages from odoc output
+(subdir site/docs/nx
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} nx ../../../../_doc/_html/nx api api_nav.html))))
+
+(subdir site/docs/rune
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} rune ../../../../_doc/_html/rune api api_nav.html))))
+
+(subdir site/docs/kaun
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} kaun ../../../../_doc/_html/kaun api api_nav.html))))
+
+(subdir site/docs/saga
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} saga ../../../../_doc/_html/saga api api_nav.html))))
+
+(subdir site/docs/sowilo
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} sowilo ../../../../_doc/_html/sowilo api api_nav.html))))
+
+(subdir site/docs/quill
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} quill ../../../../_doc/_html/quill api api_nav.html))))
+
+(subdir site/docs/hugin
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} hugin ../../../../_doc/_html/hugin api api_nav.html))))
+
+(subdir site/docs/talon
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} talon ../../../../_doc/_html/talon api api_nav.html))))
+
+(subdir site/docs/fehu
+ (rule
+  (mode promote)
+  (deps
+   (:postprocess ../../../postprocess/index.exe)
+   (alias ../../../../doc))
+  (targets
+   (dir api)
+   api_nav.html)
+  (action
+   (run %{postprocess} fehu ../../../../_doc/_html/fehu api api_nav.html))))
+
 (rule
  (targets
   (dir build))
@@ -21,13 +130,15 @@
   (source_tree templates)
   (source_tree site)
   (source_tree odoc)
-  ; site/odoc.css
-  ; site/highlight.pack.js
-  ; site/katex.min.css
-  ; site/katex.min.js
-  ; site/odoc_search.js
-  ; site/sherlodoc.js
-  ; site/docs/nx/api_nav.html
+  site/docs/nx/api_nav.html
+  site/docs/rune/api_nav.html
+  site/docs/kaun/api_nav.html
+  site/docs/saga/api_nav.html
+  site/docs/sowilo/api_nav.html
+  site/docs/quill/api_nav.html
+  site/docs/hugin/api_nav.html
+  site/docs/talon/api_nav.html
+  site/docs/fehu/api_nav.html
   )
  (action
   (run soupault)))

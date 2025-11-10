@@ -9,12 +9,11 @@
   generator_mode = true
   clean_urls = true
   page_file_extensions = ["htm", "html"]
-  markdown_extensions = ["md"]
   keep_doctype = true
   pretty_print_html = true
   plugin_discovery = true # Or load explicitly
   plugin_dirs = ["plugins"] # Default
-
+  
 [templates.docs_config]
   file = "templates/layout_docs.html"
   section = "docs/"

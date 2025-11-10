@@ -1,0 +1,4 @@
+(executable
+ (name index)
+ (modules index common)
+ (libraries lambdasoup markup str unix))

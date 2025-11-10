@@ -152,6 +152,123 @@ body {
   font-weight: normal;
 }
 
+/* API documentation content */
+.api-content {
+  font-family: var(--font-family, "IBM Plex Sans", system-ui, sans-serif);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+.api-content h1,
+.api-content h2,
+.api-content h3 {
+  margin-top: 36px;
+  margin-bottom: 16px;
+}
+
+.api-content h1 {
+  font-size: 28px;
+}
+
+.api-content h2 {
+  font-size: 22px;
+}
+
+.api-content h3 {
+  font-size: 18px;
+}
+
+.api-content ul {
+  padding-left: 24px;
+  margin-bottom: 20px;
+}
+
+.api-content p {
+  margin-bottom: 18px;
+}
+
+.api-spec {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.api-spec > .anchored > code,
+.api-spec > .anchored > pre {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-family: var(--font-family-mono, "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+.api-spec code {
+  display: block;
+  white-space: pre;
+  font-family: var(--font-family-mono, "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.api-spec .inline-code {
+  display: inline;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.api-spec .spec-doc {
+  margin-top: 12px;
+  color: var(--color-text-dim);
+}
+
+.api-spec .spec-doc p {
+  margin-bottom: 12px;
+}
+
+.api-spec .spec-doc code {
+  display: inline;
+  white-space: pre-wrap;
+}
+
+.with-backing {
+  position: relative;
+  padding-left: 12px;
+}
+
+.with-backing::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+}
+
+.api-content a {
+  color: var(--color-text);
+  text-decoration: underline dotted;
+}
+
+.api-content a:hover {
+  color: var(--color-text-bright);
+}
+
 /* Breadcrumb separator and current page */
 .breadcrumb-separator {
   color: var(--color-border-light);

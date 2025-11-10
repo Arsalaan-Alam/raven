@@ -24,3 +24,6 @@ dev.opam
 
 # Agent files
 CLAUDE.local.md
+
+www/site/docs/*/api/
+www/dsite/docs/*/api_nav.html

@@ -2,7 +2,7 @@
  (name kaun_console)
  (public_name kaun.console)
  (modules metric_store kaun_console)
- (libraries kaun kaun.filesystem yojson unix mosaic mosaic.ui))
+ (libraries kaun kaun.filesystem yojson unix mosaic mosaic.ui matrix.charts))
 
 (executable
  (name cli)

@@ -5,6 +5,7 @@
 
 open Mosaic
 open Kaun_filesystem
+module Charts = Matrix_charts
 
 (* ───── Model ───── *)
 
@@ -22,7 +23,6 @@ let header_bg = Ansi.Color.of_rgb 30 80 100
 let hint_style = Ansi.Style.make ~fg:(Ansi.Color.grayscale ~level:14) ()
 let step_color = Ansi.Color.cyan
 let epoch_color = Ansi.Color.cyan
-let metric_value_style = Ansi.Style.make ~fg:(Ansi.Color.grayscale ~level:15) ()
 
 (* ───── View Components ───── *)
 
@@ -53,6 +53,52 @@ let view_header ~run_id store =
         ];
     ]
 
+(* ───── Chart Drawing ───── *)
+
+let axis_style = Ansi.Style.make ~fg:(Ansi.Color.grayscale ~level:12) ~dim:true ()
+let y_axis_style = Ansi.Style.make ~fg:(Ansi.Color.grayscale ~level:12) ~dim:true ()
+let grid_style = Ansi.Style.make ~fg:(Ansi.Color.grayscale ~level:6) ~dim:true ()
+
+let draw_metric_chart _tag history grid ~width ~height =
+  if history = [] then
+    (* No data yet - show placeholder *)
+    ()
+  else
+    (* Convert (step, value) list to array of (x, y) tuples *)
+    let data = Array.of_list (List.map (fun (step, value) -> (float_of_int step, value)) history) in
+    let chart =
+      Charts.empty ()
+      |> Charts.with_frame (Charts.manual_frame ~margins:(1, 0, 0, 2) ())
+      |> Charts.with_axes
+           ~x:
+             (Charts.Axis.default |> Charts.Axis.with_ticks 4
+             |> Charts.Axis.with_style axis_style)
+           ~y:
+             (Charts.Axis.default |> Charts.Axis.with_ticks 2
+             |> Charts.Axis.with_style y_axis_style
+             |> Charts.Axis.with_format (fun _ v -> Printf.sprintf "%.1f" v))
+      |> Charts.with_grid
+           (Charts.Gridlines.default
+           |> Charts.Gridlines.with_style grid_style
+           |> Charts.Gridlines.with_x true
+           |> Charts.Gridlines.with_y true)
+      |> Charts.line ~resolution:`Braille2x4
+           ~style:(Ansi.Style.make ~fg:Ansi.Color.cyan ())
+           ~x:fst ~y:snd data
+    in
+    ignore (Charts.draw chart grid ~width ~height)
+
+let view_metric_chart store tag (_m : Metric_store.metric) =
+  let history = Metric_store.history_for_tag store tag in
+  box ~border:true ~title:tag ~padding:(padding 0)
+    ~size:{ width = pct 100; height = px 14 }
+    [
+      canvas
+        ~draw:(fun grid ~width ~height -> draw_metric_chart tag history grid ~width ~height)
+        ~size:{ width = pct 100; height = pct 100 }
+        ();
+    ]
+
 let view_metrics store =
   let latest = Metric_store.latest_metrics store in
   if latest = [] then
@@ -61,35 +107,10 @@ let view_metrics store =
   else
     box ~flex_direction:Column ~padding:(padding 1) ~gap:(gap 1)
       [
-        text ~style:(Ansi.Style.make ~bold:true ()) "Metrics:";
+
         box ~flex_direction:Column ~gap:(gap 1)
           (List.map
-             (fun (tag, (m : Metric_store.metric)) ->
-               let epoch_str =
-                 match m.epoch with
-                 | None -> ""
-                 | Some e -> Printf.sprintf ", epoch %d" e
-               in
-               box ~flex_direction:Column ~gap:(gap 0)
-                 [
-                   (* Tag name on first line *)
-                   box ~flex_direction:Row
-                     [
-                       text ~style:hint_style "  ";
-                       text ~style:(Ansi.Style.make ~bold:true ()) tag;
-                     ];
-                   (* Value and step info on second line, indented *)
-                   box ~flex_direction:Row ~gap:(gap 1)
-                     [
-                       text ~style:hint_style "    ";
-                       text
-                         ~style:metric_value_style
-                         (Printf.sprintf "%.4f" m.value);
-                       text
-                         ~style:hint_style
-                         (Printf.sprintf "(step %d%s)" m.step epoch_str);
-                     ];
-                 ])
+             (fun (tag, m) -> view_metric_chart store tag m)
              latest);
       ]
 

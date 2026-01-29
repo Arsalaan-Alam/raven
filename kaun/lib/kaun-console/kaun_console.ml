@@ -145,9 +145,15 @@ let view m =
 let init ~run_id ~events_path =
   let reader = Event_reader.create ~file_path:events_path in
   let store = Metric_store.create () in
-  (* Load initial events *)
-  let initial_events = Event_reader.read_new reader in
-  Metric_store.update store initial_events;
+  (* Load all existing events on startup to build history *)
+  Event_reader.reset reader;
+  let rec load_all_events acc =
+    match Event_reader.read_new reader with
+    | [] -> acc
+    | new_events -> load_all_events (acc @ new_events)
+  in
+  let all_events = load_all_events [] in
+  Metric_store.update store all_events;
   ({ run_id; store; reader }, Cmd.none)
 
 let update msg m =

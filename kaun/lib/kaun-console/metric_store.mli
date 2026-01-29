@@ -32,3 +32,7 @@ val latest_metrics : t -> (string * metric) list
 
 val clear : t -> unit
 (** [clear store] drops all stored metrics/epochs. *)
+
+val history_for_tag : t -> string -> (int * float) list
+(** [history_for_tag store tag] returns the full history of (step, value) pairs
+    for the given tag, in chronological order. Returns empty list if tag not found. *)

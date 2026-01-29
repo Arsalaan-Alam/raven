@@ -43,6 +43,7 @@ let view_header ~run_id store =
               text
                 ~style:(Ansi.Style.make ~fg:epoch_color ())
                 (Printf.sprintf "Epoch: %d" e));
+          box ~flex_grow:1.0 ~size:{ width = auto; height = auto } [];
           box ~padding:(padding 1) ~background:Ansi.Color.green
             [
               text
@@ -69,18 +70,36 @@ let view_metrics store =
                  | None -> ""
                  | Some e -> Printf.sprintf ", epoch %d" e
                in
-               box ~flex_direction:Row ~gap:(gap 2)
+               box ~flex_direction:Column ~gap:(gap 0)
                  [
-                   text ~style:hint_style (Printf.sprintf "  %-30s" tag);
-                   text
-                     ~style:metric_value_style
-                     (Printf.sprintf "%8.4f" m.value);
-                   text
-                     ~style:hint_style
-                     (Printf.sprintf "(step %d%s)" m.step epoch_str);
+                   (* Tag name on first line *)
+                   box ~flex_direction:Row
+                     [
+                       text ~style:hint_style "  ";
+                       text ~style:(Ansi.Style.make ~bold:true ()) tag;
+                     ];
+                   (* Value and step info on second line, indented *)
+                   box ~flex_direction:Row ~gap:(gap 1)
+                     [
+                       text ~style:hint_style "    ";
+                       text
+                         ~style:metric_value_style
+                         (Printf.sprintf "%.4f" m.value);
+                       text
+                         ~style:hint_style
+                         (Printf.sprintf "(step %d%s)" m.step epoch_str);
+                     ];
                  ])
              latest);
       ]
+
+let view_imp_info () =
+  box ~padding:(padding 1)
+    [ text ~style:(Ansi.Style.make ~bold:true ()) "imp info" ]
+
+let view_sys_panel () =
+  box ~padding:(padding 1)
+    [ text ~style:(Ansi.Style.make ~bold:true ()) "sys panel" ]
 
 let view_footer () =
   box ~padding:(padding 1)
@@ -91,9 +110,33 @@ let view m =
     ~size:{ width = pct 100; height = pct 100 }
     [
       view_header ~run_id:m.run_id m.store;
-      scroll_box ~scroll_y:true ~scroll_x:false ~flex_grow:1.
+
+      box ~flex_direction:Row ~flex_grow:1.0
         ~size:{ width = pct 100; height = pct 100 }
-        [ view_metrics m.store ];
+        [
+          (* Left column: imp info *)
+          scroll_box ~scroll_y:true ~scroll_x:false
+            ~size:{ width = pct 33; height = pct 100 }
+            [ view_imp_info () ];
+          (* Vertical divider *)
+          box
+            ~size:{ width = px 1; height = pct 100 }
+            ~background:(Ansi.Color.grayscale ~level:8)
+            [ text " " ];
+          (* Middle column: metrics *)
+          scroll_box ~scroll_y:true ~scroll_x:false
+            ~size:{ width = pct 34; height = pct 100 }
+            [ view_metrics m.store ];
+          (* Vertical divider *)
+          box
+            ~size:{ width = px 1; height = pct 100 }
+            ~background:(Ansi.Color.grayscale ~level:8)
+            [ text " " ];
+          (* Right column: sys panel *)
+          scroll_box ~scroll_y:true ~scroll_x:false
+            ~size:{ width = pct 33; height = pct 100 }
+            [ view_sys_panel () ];
+        ];
       view_footer ();
     ]
 

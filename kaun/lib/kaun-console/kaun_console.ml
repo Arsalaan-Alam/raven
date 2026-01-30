@@ -177,8 +177,8 @@ let view m =
             ~size:{ width = px 1; height = pct 100 }
             ~background:(Ansi.Color.grayscale ~level:8)
             [ text " " ];
-          (* Middle column: metrics *)
-          scroll_box ~scroll_y:true ~scroll_x:false
+          (* Middle column: metrics - scroll disabled since we use batch navigation *)
+          scroll_box ~scroll_y:false ~scroll_x:false
             ~size:{ width = pct 34; height = pct 100 }
             [ view_metrics m ];
 

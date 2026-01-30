@@ -13,9 +13,11 @@ type model = {
   run_id : string;
   store : Metric_store.t;
   reader : Event_reader.t;
+  screen_height : int;
+  current_batch : int;
 }
 
-type msg = Tick of float | Quit
+type msg = Tick of float | Quit | Resize of int * int | Next_batch | Prev_batch
 
 (* ───── Constants ───── *)
 
@@ -23,6 +25,18 @@ let header_bg = Ansi.Color.of_rgb 30 80 100
 let hint_style = Ansi.Style.make ~fg:(Ansi.Color.grayscale ~level:14) ()
 let step_color = Ansi.Color.cyan
 let epoch_color = Ansi.Color.cyan
+
+(* Graph dimensions *)
+let graph_height = 14
+let header_height = 3
+let footer_height = 1
+let metrics_padding = 2
+
+(* Calculate how many graphs fit in available height *)
+let calculate_graphs_per_batch (screen_height : int) : int =
+  let available_height = screen_height - header_height - footer_height - metrics_padding * 2 in
+  if available_height < graph_height then 1
+  else max 1 (available_height / graph_height)
 
 (* ───── View Components ───── *)
 
@@ -99,19 +113,39 @@ let view_metric_chart store tag (_m : Metric_store.metric) =
         ();
     ]
 
-let view_metrics store =
-  let latest = Metric_store.latest_metrics store in
+let view_metrics m =
+  let latest = Metric_store.latest_metrics m.store in
   if latest = [] then
     box ~padding:(padding 1)
       [ text ~style:hint_style "  Waiting for metrics..." ]
   else
+    let total_metrics = List.length latest in
+    let graphs_per_batch = calculate_graphs_per_batch m.screen_height in
+    let total_batches = if total_metrics = 0 then 1 else (total_metrics + graphs_per_batch - 1) / graphs_per_batch in
+    let current_batch = min m.current_batch (max 0 (total_batches - 1)) in
+    let start_idx = current_batch * graphs_per_batch in
+    let end_idx = min (start_idx + graphs_per_batch) total_metrics in
+    let visible_metrics =
+      List.mapi (fun i (tag, metric) -> (i, tag, metric)) latest
+      |> List.filter (fun (i, _, _) -> i >= start_idx && i < end_idx)
+      |> List.map (fun (_, tag, metric) -> (tag, metric))
+    in
     box ~flex_direction:Column ~padding:(padding 1) ~gap:(gap 1)
       [
-
+        (if total_batches > 1 then
+           box ~flex_direction:Row ~justify_content:Space_between ~align_items:Center
+             [
+               text ~style:(Ansi.Style.make ~bold:true ()) "Metrics:";
+               text ~style:hint_style
+                 (Printf.sprintf "Batch %d/%d (← →)" (current_batch + 1) total_batches);
+             ]
+         else
+           box ~flex_direction:Row
+             [ text ~style:(Ansi.Style.make ~bold:true ()) "Metrics:" ]);
         box ~flex_direction:Column ~gap:(gap 1)
           (List.map
-             (fun (tag, m) -> view_metric_chart store tag m)
-             latest);
+             (fun (tag, metric) -> view_metric_chart m.store tag metric)
+             visible_metrics);
       ]
 
 let view_imp_info () =
@@ -139,7 +173,6 @@ let view m =
           scroll_box ~scroll_y:true ~scroll_x:false
             ~size:{ width = pct 33; height = pct 100 }
             [ view_imp_info () ];
-          (* Vertical divider *)
           box
             ~size:{ width = px 1; height = pct 100 }
             ~background:(Ansi.Color.grayscale ~level:8)
@@ -147,8 +180,8 @@ let view m =
           (* Middle column: metrics *)
           scroll_box ~scroll_y:true ~scroll_x:false
             ~size:{ width = pct 34; height = pct 100 }
-            [ view_metrics m.store ];
-          (* Vertical divider *)
+            [ view_metrics m ];
+
           box
             ~size:{ width = px 1; height = pct 100 }
             ~background:(Ansi.Color.grayscale ~level:8)
@@ -163,6 +196,16 @@ let view m =
 
 (* ───── TEA Core ───── *)
 
+let get_initial_terminal_height () : int =
+  try
+    let ic = Unix.open_process_in "stty size 2>/dev/null" in
+    let line = input_line ic in
+    ignore (Unix.close_process_in ic);
+    match String.split_on_char ' ' line with
+    | rows :: _ -> int_of_string rows
+    | _ -> 24
+  with _ -> 24
+
 let init ~run_id ~events_path =
   let reader = Event_reader.create ~file_path:events_path in
   let store = Metric_store.create () in
@@ -175,7 +218,9 @@ let init ~run_id ~events_path =
   in
   let all_events = load_all_events [] in
   Metric_store.update store all_events;
-  ({ run_id; store; reader }, Cmd.none)
+  (* Get actual terminal height at startup *)
+  let initial_height = get_initial_terminal_height () in
+  ({ run_id; store; reader; screen_height = initial_height; current_batch = 0 }, Cmd.none)
 
 let update msg m =
   match msg with
@@ -183,6 +228,24 @@ let update msg m =
       let new_events = Event_reader.read_new m.reader in
       Metric_store.update m.store new_events;
       ({ m with store = m.store }, Cmd.none)
+  | Resize (_width, height) ->
+      (* Recalculate current batch to ensure it's still valid after resize *)
+      let latest = Metric_store.latest_metrics m.store in
+      let total_metrics = List.length latest in
+      let graphs_per_batch = calculate_graphs_per_batch height in
+      let total_batches = if total_metrics = 0 then 1 else (total_metrics + graphs_per_batch - 1) / graphs_per_batch in
+      let max_batch = max 0 (total_batches - 1) in
+      let current_batch = min m.current_batch max_batch in
+      ({ m with screen_height = height; current_batch }, Cmd.none)
+  | Next_batch ->
+      let latest = Metric_store.latest_metrics m.store in
+      let total_metrics = List.length latest in
+      let graphs_per_batch = calculate_graphs_per_batch m.screen_height in
+      let total_batches = if total_metrics = 0 then 1 else (total_metrics + graphs_per_batch - 1) / graphs_per_batch in
+      let max_batch = max 0 (total_batches - 1) in
+      ({ m with current_batch = min (m.current_batch + 1) max_batch }, Cmd.none)
+  | Prev_batch ->
+      ({ m with current_batch = max 0 (m.current_batch - 1) }, Cmd.none)
   | Quit ->
       Event_reader.close m.reader;
       (m, Cmd.quit)
@@ -191,11 +254,14 @@ let subscriptions _model =
   Sub.batch
     [
       Sub.on_tick (fun ~dt -> Tick dt);
+      Sub.on_resize (fun ~width ~height -> Resize (width, height));
       Sub.on_key (fun ev ->
           match (Mosaic_ui.Event.Key.data ev).key with
           | Char c when Uchar.equal c (Uchar.of_char 'q') -> Some Quit
           | Char c when Uchar.equal c (Uchar.of_char 'Q') -> Some Quit
           | Escape -> Some Quit
+          | Left -> Some Prev_batch
+          | Right -> Some Next_batch
           | _ -> None);
     ]
 

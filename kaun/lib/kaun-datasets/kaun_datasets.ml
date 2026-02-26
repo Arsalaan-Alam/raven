@@ -76,9 +76,12 @@ let cifar10 ?(train = true) ?(normalize = true) ?(data_format = `NCHW)
   let x = Nx.cast Nx.float32 x in
   let y = Nx.cast Nx.float32 y in
 
-  (* Convert to Rune tensors *)
+  (* Convert to Rune tensors. Nx returns NHWC [N, 32, 32, 3]. *)
   let x = Rune.of_bigarray (Nx.to_bigarray x) in
   let y = Rune.of_bigarray (Nx.to_bigarray y) in
+
+  (* Convert to NCHW first so ImageNet normalization (mean/std [1,3,1,1]) broadcasts correctly. *)
+  let x = Rune.transpose x ~axes:[ 0; 3; 1; 2 ] in
 
   (* Normalize with ImageNet stats if requested *)
   let x =
@@ -100,13 +103,11 @@ let cifar10 ?(train = true) ?(normalize = true) ?(data_format = `NCHW)
     else x
   in
 
-  (* Handle data format *)
+  (* Apply requested data format: NCHW stays as is, NHWC transpose back *)
   let x =
     match data_format with
-    | `NCHW -> x (* CIFAR-10 is already in NCHW format *)
-    | `NHWC ->
-        (* Convert from [N, C, H, W] to [N, H, W, C] *)
-        Rune.transpose x ~axes:[ 0; 2; 3; 1 ]
+    | `NCHW -> x
+    | `NHWC -> Rune.transpose x ~axes:[ 0; 2; 3; 1 ]
   in
 
   (* Keep labels as class indices *)

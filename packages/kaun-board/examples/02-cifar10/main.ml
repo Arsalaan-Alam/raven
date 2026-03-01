@@ -88,7 +88,7 @@ let () =
         let loss = Nx.item [] loss_val in
         Metric.observe tracker "loss" loss;
         Kaun_board.Log.log_scalar logger ~step:!global_step ~epoch
-          ~tag:"train/loss" loss;
+          ~direction:`Min ~tag:"train/loss" loss;
         Printf.printf "\r  batch %d/%d  loss: %.4f%!" !batch_i num_batches loss)
       train_batches;
     Printf.printf "\n%!";
@@ -112,6 +112,12 @@ let () =
 
     let avg_loss = Metric.mean tracker "loss" in
     Kaun_board.Log.log_scalars logger ~step:!global_step ~epoch
+      ~directions:
+        [
+          ("train/loss_avg", `Min);
+          ("train/accuracy", `Max);
+          ("test/accuracy", `Max);
+        ]
       [
         ("train/loss_avg", avg_loss);
         ("train/accuracy", train_acc);
